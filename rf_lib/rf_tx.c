@@ -1,0 +1,130 @@
+/*
+ * rf_tx.c
+ *
+ * Created: 17.02.2016 22:02:53
+ * Author : Christian Wagner
+ */
+
+#ifndef F_CPU
+#define F_CPU 1000000UL
+#endif
+
+#define RF_ON (PORTB |= (1 << PORTB3))
+#define RF_OFF (PORTB &= ~(1 << PORTB3))
+
+#include <avr/io.h>
+#include <util/delay.h>
+#include <stddef.h>
+
+#include "rf_tx.h"
+#include "rf_man.h"
+
+static bool volatile _send = false;
+const static uint8_t PREAMBLE[] = {0xAA, 0xAA, 0xA9};
+const static uint8_t EOT[] = {0x40};
+static uint16_t _tx_bytes;
+static uint16_t _tx_buffer[100];
+
+static bool is_little_endian();
+
+static struct _tx_packet_t
+{
+    const uint8_t* ptr;
+    uint8_t size;
+} _tx_packet[4] = { {PREAMBLE, sizeof(PREAMBLE)}, {(const uint8_t*) &_tx_bytes, sizeof(_tx_bytes)}, {NULL, 0}, {EOT, sizeof(EOT)} };
+
+void rf_tx_irq()
+{
+    static uint8_t bits = 8;
+    static uint8_t ptr_idx = 0;
+    static uint8_t packet_idx = 0;
+    if(_send)
+    {
+        if(packet_idx < sizeof(_tx_packet) / sizeof(_tx_packet[0]))
+        {
+            if(ptr_idx < _tx_packet[packet_idx].size)
+            {
+                if(_tx_packet[packet_idx].ptr[ptr_idx] & (1 << --bits))
+                {
+                    RF_ON;
+                }
+                else
+                {
+                    RF_OFF;
+                }
+                if(bits == 0)
+                {
+                    bits = 8;
+                    ptr_idx++;
+                }
+            }
+            if(ptr_idx == _tx_packet[packet_idx].size)
+            {
+                ptr_idx = 0;
+                packet_idx++;
+            }
+        }
+        else
+        {
+            RF_OFF;
+            packet_idx = 0;
+            _send = false;
+        }
+    }
+}
+
+void rf_tx_start(uint8_t* data, uint8_t len)
+{
+    _send = true;
+    len = (len*2 > sizeof(_tx_buffer)) ? sizeof(_tx_buffer) : len;		//laenge der codierten oder decodierten nachricht?
+    _tx_bytes = rf_man_enc(len);
+    if(is_little_endian())
+        _tx_bytes = ((_tx_bytes & 0xFF00) >> 8) | (_tx_bytes << 8);		//Transmit length in big endian
+    _tx_packet[1].size = 2;
+    _tx_packet[2].ptr = data;		//TODO: codieren
+    _tx_packet[2].size = len;
+}
+
+bool rf_tx_done()
+{
+    return !_send;
+}
+
+void rf_tx_wait()
+{
+    while(_send);
+}
+
+void rf_tx_pulse()
+{
+    RF_OFF;
+    uint32_t do_send;
+    for(uint8_t k = 0; k < sizeof(_tx_packet)/sizeof(_tx_packet[0]); k++)
+    {
+        for(uint16_t j = 0; j < _tx_packet[k].size; j++)
+        {
+            for(int8_t i = 7; i >= 0; i--)
+            {
+                do_send = _tx_packet[k].ptr[j] & (1 << i);
+                if(do_send)
+                {
+                    RF_ON;
+                }
+                else
+                {
+                    RF_OFF;
+                }
+                _delay_us(935);
+            }
+        }
+    }
+    RF_OFF;
+}
+
+static bool is_little_endian()
+{
+    static uint8_t val[] = {0x10,0x50};
+    if( *(uint16_t*) val == 0x1050)
+        return false;
+    return true;
+}
