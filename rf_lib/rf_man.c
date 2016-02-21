@@ -8,37 +8,39 @@
 #include <stdint.h>
 #include "rf_man.h"
 
-uint16_t rf_man_enc(uint8_t data)
+void rf_man_enc(uint8_t data, uint8_t encoded[2])
 {
-    uint16_t ret = 0;
+    encoded[0] = 0;
+    encoded[1] = 0;
     for(uint8_t i = 0; i < 8; i++)
     {
-        ret <<= 1;
+        uint8_t idx = (i >> 2);
+        encoded[idx] <<= 1;
         if(data & 0x80)
         {
-            ret <<= 1;
-            ret |= 1;
+            encoded[idx] <<= 1;
+            encoded[idx] |= 1;
         }
         else
         {
-            ret |= 1;
-            ret <<= 1;
+            encoded[idx] |= 1;
+            encoded[idx] <<= 1;
         }
         data <<= 1;
     }
-    return ret;
 }
 
 
-uint8_t rf_man_dec(uint16_t data)
+uint8_t rf_man_dec(uint8_t data[2])
 {
     uint8_t byte = 0;
     for(uint8_t i = 0; i < 8; i++)
     {
+        uint8_t idx = (i >> 2);
         byte <<= 1;
-        if(!(data & 0x8000))
+        if(!(data[idx] & 0x80))
             byte |= 1;
-        data <<= 2;
+        data[idx] <<= 2;
     }
     return byte;
 }

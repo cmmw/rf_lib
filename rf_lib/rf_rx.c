@@ -15,6 +15,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "rf_rx.h"
 #include "rf_man.h"
@@ -48,7 +49,7 @@ void rf_rx_irq()
     static enum RX_State rx_state = RX_PRE;
     static uint8_t rx_bits;
     static uint8_t rx_buf_idx;
-    static uint16_t rx_len;
+    static uint8_t rx_len;
 
     if(!_receive)
         return;
@@ -94,18 +95,19 @@ void rf_rx_irq()
                     else if(rx_sync_count >= 10)		//rx_last == 0, received '...001'
                     {
                         rx_state = RX_DATA_LEN;
-                        rx_bits = 0;
+                        _buffer[0] = _buffer[1] = rx_bits = 0;
                     }
                 }
                 break;
 
             case RX_DATA_LEN:
+                rx_buf_idx = rx_bits >> 3;
                 if(rx_double_bit)
                 {
-                    rx_bits++;
-                    rx_len <<= 1;
+                    _buffer[rx_buf_idx] <<= 1;
                     if(rx_last)
-                        rx_len |= 1;
+                        _buffer[rx_buf_idx] |= 1;
+                    rx_bits++;
                 }
 
                 if(rx_bits == 16)
@@ -113,26 +115,26 @@ void rf_rx_irq()
                     rx_state = RX_DATA;
                     rx_bits = 1;
                     rx_buf_idx = 0;
-                    _buffer[0] = 0;
+                    rx_len = rf_man_dec(_buffer);
+                    _buffer[2] <<= 1;
                     if(rx_sample)
-                        _buffer[0] |= 1;
-                    rx_len = rf_man_dec(rx_len);
+                        _buffer[2] |= 1;
+
 //                     if(_rx_buf_size < rx_len)
 //                         rx_len = _rx_buf_size;
                 }
                 else
                 {
-                    rx_bits++;
-                    rx_len <<= 1;
+                    _buffer[rx_buf_idx] <<= 1;
                     if(rx_sample)
-                        rx_len |= 1;
-
+                        _buffer[rx_buf_idx] |= 1;
+                    rx_bits++;
                     if(rx_bits == 16)
                     {
                         rx_state = RX_DATA;
                         rx_bits = 0;
                         rx_buf_idx = 0;
-                        rx_len = rf_man_dec(rx_len);
+                        rx_len = rf_man_dec(_buffer);
 //                         if(_rx_buf_size < rx_len)
 //                             rx_len = _rx_buf_size;
                     }
@@ -198,6 +200,7 @@ void rf_rx_start(uint8_t* buffer, uint8_t size, uint8_t samples)
     _buffer = buffer;
     _buf_size = size;
     _receive = true;
+    memset(buffer, 0, size);
 }
 
 bool rf_rx_done()

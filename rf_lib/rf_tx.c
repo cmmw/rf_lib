@@ -22,10 +22,8 @@
 static bool volatile _send = false;
 const static uint8_t PREAMBLE[] = {0xAA, 0xAA, 0xA9};
 const static uint8_t EOT[] = {0x40};
-static uint16_t _tx_bytes;
+static uint8_t _tx_bytes[2];
 static uint16_t _tx_buffer[100];
-
-static bool is_little_endian();
 
 static struct _tx_packet_t
 {
@@ -77,10 +75,7 @@ void rf_tx_start(uint8_t* data, uint8_t len)
 {
     _send = true;
     len = (len*2 > sizeof(_tx_buffer)) ? sizeof(_tx_buffer) : len;		//laenge der codierten oder decodierten nachricht?
-    _tx_bytes = rf_man_enc(len);
-    if(is_little_endian())
-        _tx_bytes = ((_tx_bytes & 0xFF00) >> 8) | (_tx_bytes << 8);		//Transmit length in big endian
-    _tx_packet[1].size = 2;
+    rf_man_enc(len, _tx_bytes);
     _tx_packet[2].ptr = data;		//TODO: codieren
     _tx_packet[2].size = len;
 }
@@ -119,12 +114,4 @@ void rf_tx_pulse()
         }
     }
     RF_OFF;
-}
-
-static bool is_little_endian()
-{
-    static uint8_t val[] = {0x10,0x50};
-    if( *(uint16_t*) val == 0x1050)
-        return false;
-    return true;
 }

@@ -14,8 +14,8 @@
 extern "C" {
 #endif
 
-uint16_t rf_man_enc(uint8_t data);
-uint8_t rf_man_dec(uint16_t data);
+void rf_man_enc(uint8_t data, uint8_t encoded[2]);
+uint8_t rf_man_dec(uint8_t data[2]);
 
 
 #ifdef __cplusplus
