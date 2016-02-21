@@ -73,11 +73,11 @@ void rf_tx_irq()
 
 void rf_tx_start(uint8_t* data, uint8_t len)
 {
-    _send = true;
-    len = (len*2 > sizeof(_tx_buffer)) ? sizeof(_tx_buffer) : len;		//laenge der codierten oder decodierten nachricht?
+    len = (len*2 > sizeof(_tx_buffer)) ? sizeof(_tx_buffer) : len*2;
     rf_man_enc(len, _tx_bytes);
     _tx_packet[2].ptr = data;		//TODO: codieren
     _tx_packet[2].size = len;
+    _send = true;
 }
 
 bool rf_tx_done()
