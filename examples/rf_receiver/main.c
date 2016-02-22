@@ -46,9 +46,9 @@ int main(void)
     sei();
 
     uint8_t data[120];
+    rf_rx_start(data, sizeof(data), 4, 0x09);
     while (1)
     {
-        rf_rx_start(data, sizeof(data), 4, 0x09);
         rf_rx_wait();
         if(memcmp(data, "ON", 2) == 0)
         {
@@ -58,5 +58,6 @@ int main(void)
         {
             LED_OFF;
         }
+        rf_rx_restart();
     }
 }
