@@ -93,15 +93,18 @@ void rf_tx_irq()
     }
 }
 
-
 void rf_tx_start(const void* data, uint8_t len, uint8_t id)
 {
     _tx_bytes = len;
     _tx_packet[3].ptr = data;
     _tx_packet[3].size = len;
     _tx_id = id;
-    _send = true;
+    rf_tx_restart();
+}
 
+void rf_tx_restart()
+{
+    _send = true;
 }
 
 bool rf_tx_done()

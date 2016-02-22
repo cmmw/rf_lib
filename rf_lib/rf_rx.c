@@ -25,11 +25,6 @@ enum RX_State
     RX_DATA,
 };
 
-
-#define LED_ON (PORTB |= (1 << PORTB4))
-#define LED_SWITCH (PORTB ^= (1 << PORTB4))
-#define LED_OFF (PORTB &= ~(1 << PORTB4))
-
 static bool volatile _receive = false;
 static uint8_t _samples_min = 3;
 static uint8_t _samples_max = 5;
@@ -223,8 +218,6 @@ void rf_rx_irq()
     rx_last = rx_sample;
 }
 
-
-
 void rf_rx_start(void* buffer, uint8_t size, uint8_t samples, uint8_t id)
 {
     uint8_t d = samples / 4;
@@ -233,9 +226,13 @@ void rf_rx_start(void* buffer, uint8_t size, uint8_t samples, uint8_t id)
     _buffer = (uint8_t*) buffer;
     _buf_size = size;
     _id = id;
-    memset(buffer, 0, size);
-    _receive = true;
+    rf_rx_restart();
+}
 
+void rf_rx_restart()
+{
+    memset(_buffer, 0, _buf_size);
+    _receive = true;
 }
 
 bool rf_rx_done()
