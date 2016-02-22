@@ -48,7 +48,7 @@ int main(void)
     uint8_t data[120];
     while (1)
     {
-        rf_rx_start(data, sizeof(data), 4);
+        rf_rx_start(data, sizeof(data), 4, 10);
         rf_rx_wait();
         if(memcmp(data, "ON", 2) == 0)
         {

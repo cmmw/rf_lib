@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 void rf_rx_irq();
-void rf_rx_start(void* buffer, uint8_t size, uint8_t samples);
+void rf_rx_start(void* buffer, uint8_t size, uint8_t samples, uint8_t id);
 bool rf_rx_done();
 void rf_rx_wait();
 

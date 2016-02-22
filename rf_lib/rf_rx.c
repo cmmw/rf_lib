@@ -20,6 +20,7 @@ enum RX_State
 {
     RX_PRE,
     RX_SYNC,
+    RX_DATA_ID,
     RX_DATA_LEN,
     RX_DATA,
 };
@@ -34,6 +35,7 @@ static uint8_t _samples_min = 3;
 static uint8_t _samples_max = 5;
 static uint8_t* _buffer;
 static uint8_t _buf_size;
+static uint8_t _id;
 
 //Everything after preamble is Manchester encoded except the EOT bits
 //3 byte PREAMBLE | 2 byte len (big endian) | len byte message | EOT bits '01'
@@ -94,12 +96,13 @@ void rf_rx_irq()
                     }
                     else if(rx_sync_count >= 10)		//rx_last == 0, received '...001'
                     {
-                        rx_state = RX_DATA_LEN;
-                        _buffer[0] = _buffer[1] = rx_bits = 0;
+                        rx_state = RX_DATA_ID;
+                        _buffer[0] = _buffer[1] = rx_bits = rx_len = 0;
                     }
                 }
                 break;
 
+            case RX_DATA_ID:
             case RX_DATA_LEN:
                 if(rx_double_bit)
                 {
@@ -112,14 +115,31 @@ void rf_rx_irq()
                     rx_bits++;
                     if(rx_bits == 16)
                     {
-                        rx_state = RX_DATA;
-                        rx_buf_idx  = 0;
-                        if(!rx_sample)
-                            _buffer[0] |= 1;
-                        rx_bits = 1;
-                        if(_buf_size < rx_len)
-                            rx_len = _buf_size;
-                        break;
+                        rx_bits = 0;
+                        if(rx_state == RX_DATA_ID)
+                        {
+                            if(rx_len != _id)
+                            {
+                                rx_state = RX_PRE;
+                                break;
+                            }
+                            rx_state = RX_DATA_LEN;
+                            rx_len = 0;
+                        }
+                        else
+                        {
+                            rx_buf_idx = 0;
+                            rx_state = RX_DATA;
+                            if(_buf_size < rx_len)
+                                rx_len = _buf_size;
+                            if(!rx_sample)
+                                _buffer[0] |= 1;
+                            rx_bits = 1;
+                            if(_buf_size < rx_len)
+                                rx_len = _buf_size;
+                            break;
+                        }
+
                     }
                 }
                 if(rx_bits % 2 == 0)
@@ -131,11 +151,24 @@ void rf_rx_irq()
                 rx_bits++;
                 if(rx_bits == 16)
                 {
-                    rx_state = RX_DATA;
-                    rx_buf_idx = 0;
                     rx_bits = 0;
-                    if(_buf_size < rx_len)
-                        rx_len = _buf_size;
+                    if(rx_state == RX_DATA_ID)
+                    {
+                        if(rx_len != _id)
+                        {
+                            rx_state = RX_PRE;
+                            break;
+                        }
+                        rx_state = RX_DATA_LEN;
+                        rx_len = 0;
+                    }
+                    else
+                    {
+                        rx_buf_idx = 0;
+                        rx_state = RX_DATA;
+                        if(_buf_size < rx_len)
+                            rx_len = _buf_size;
+                    }
                 }
                 break;
 
@@ -190,14 +223,16 @@ void rf_rx_irq()
 
 
 
-void rf_rx_start(void* buffer, uint8_t size, uint8_t samples)
+void rf_rx_start(void* buffer, uint8_t size, uint8_t samples, uint8_t id)
 {
     _samples_min = samples - 1;		//TODO
     _samples_max = samples + 1;
     _buffer = (uint8_t*) buffer;
     _buf_size = size;
-    _receive = true;
+    _id = id;
     memset(buffer, 0, size);
+    _receive = true;
+
 }
 
 bool rf_rx_done()

@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 void rf_tx_irq();
-void rf_tx_start(const void* data, uint8_t len);
+void rf_tx_start(const void* data, uint8_t len, uint8_t id);
 bool rf_tx_done();
 void rf_tx_wait();
 void rf_tx_pulse();

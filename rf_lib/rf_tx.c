@@ -24,13 +24,14 @@ static bool volatile _send = false;
 const static uint8_t PREAMBLE[] = {0xAA, 0xAA, 0xA9};
 const static uint8_t EOT[] = {0x40};
 static uint8_t _tx_bytes;
+static uint8_t _tx_id;
 
 static struct _tx_packet_t
 {
     const uint8_t* ptr;
     uint8_t size;
     bool encode;
-} _tx_packet[4] = { {PREAMBLE, sizeof(PREAMBLE), false}, {(const uint8_t*) &_tx_bytes, sizeof(_tx_bytes), true}, {NULL, 0, true}, {EOT, sizeof(EOT), false} };
+} _tx_packet[] = { {PREAMBLE, sizeof(PREAMBLE), false}, {(const uint8_t*) &_tx_id, sizeof(_tx_id), true}, {(const uint8_t*) &_tx_bytes, sizeof(_tx_bytes), true}, {NULL, 0, true}, {EOT, sizeof(EOT), false} };
 
 void rf_tx_irq()
 {
@@ -93,12 +94,14 @@ void rf_tx_irq()
 }
 
 
-void rf_tx_start(const void* data, uint8_t len)
+void rf_tx_start(const void* data, uint8_t len, uint8_t id)
 {
     _tx_bytes = len;
-    _tx_packet[2].ptr = data;
-    _tx_packet[2].size = len;
+    _tx_packet[3].ptr = data;
+    _tx_packet[3].size = len;
+    _tx_id = id;
     _send = true;
+
 }
 
 bool rf_tx_done()
