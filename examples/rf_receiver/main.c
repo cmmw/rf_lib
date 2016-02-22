@@ -45,17 +45,20 @@ int main(void)
 
     sei();
 
+    char* ON = "TURN ME ON";
+    char* OFF = "TURN ME OFF";
+
     uint8_t data[120];
-	rf_rx_set_io(&PINB, PINB3);
+    rf_rx_set_io(&PINB, PINB3);
     rf_rx_start(data, sizeof(data), 4, 0x09);
     while (1)
     {
         rf_rx_wait();
-        if(memcmp(data, "ON", 2) == 0)
+        if(memcmp(data, ON, strlen(ON)) == 0)
         {
             LED_ON;
         }
-        else if(memcmp(data, "OFF", 3) == 0)
+        else if(memcmp(data, OFF, strlen(OFF)) == 0)
         {
             LED_OFF;
         }

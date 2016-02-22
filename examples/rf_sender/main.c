@@ -33,6 +33,8 @@ int main(void)
     TCCR0B |= (1 << CS01);		//prescale 8
     //1000 Hz = (F_CPU / 1000 / prescale=8) - 1 -> 124
     OCR0A = 124;
+	
+	
 
     /**Unrelated power savings**/
     //Turn off analog comparator to save power
@@ -44,14 +46,14 @@ int main(void)
 
     sei();
 
-    static uint8_t ON[] = {'O', 'N'};
-    static uint8_t OFF[] = {'O', 'F', 'F'};
+    char* ON = "TURN ME ON";
+    char* OFF = "TURN ME OFF";
     rf_tx_set_io(&PORTB, PB3);
     while (1)
     {
         if(!(PINB & (1 << PINB2)))
         {
-            rf_tx_start(ON, sizeof(ON), 0x09);
+            rf_tx_start(ON, strlen(ON), 0x09);
 //             rf_tx_pulse();
             TIMSK |= (1 << OCIE0A);			//Enable Compare Match A interrupt
             rf_tx_wait();
@@ -59,7 +61,7 @@ int main(void)
         }
         else if(!(PINB & (1 << PINB4)))
         {
-            rf_tx_start(OFF, sizeof(OFF), 0x09);
+            rf_tx_start(OFF, strlen(OFF), 0x09);
 //             rf_tx_pulse();
             TIMSK |= (1 << OCIE0A);			//Enable Compare Match A interrupt
             rf_tx_wait();
