@@ -2,7 +2,7 @@
  * rf_rx.h
  *
  * Created: 20.02.2016 11:56:18
- *  Author: Christian
+ *  Author: Christian Wagner
  */
 
 
@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 void rf_rx_irq();
-void rf_rx_start(uint8_t* buffer, uint8_t size, uint8_t samples);
+void rf_rx_start(void* buffer, uint8_t size, uint8_t samples);
 bool rf_rx_done();
 void rf_rx_wait();
 

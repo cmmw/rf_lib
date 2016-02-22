@@ -9,9 +9,13 @@
 #define F_CPU 1000000UL
 #define _SAMPLES 4
 
+#define LED_ON (PORTB |= (1 << PORTB4))
+#define LED_SWITCH (PORTB ^= (1 << PORTB4))
+#define LED_OFF (PORTB &= ~(1 << PORTB4))
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <string.h>
 
 #include <rf_rx.h>
 
@@ -25,8 +29,7 @@ int main(void)
 {
     DDRB &= !(1 << DDB3);	//RF Receiver
     PORTB |= (1 << PB3);	//Pull-up
-    //LED
-    DDRB |= (1 << DDB4)	;
+    DDRB |= (1 << DDB4)	;	//LED
 
     TCCR0A |= (1 << WGM01);		//CTC Mode
     TCCR0B |= (1 << CS00);		//No prescale
@@ -35,13 +38,25 @@ int main(void)
     OCR0A = (F_CPU / 1000.0 / _SAMPLES) - 1;
     OCR0A = 249;
 
-    uint8_t data[120];
+    /**Unrelated power savings**/
+    //Turn off analog comparator to save power
+    ACSR |= (1 << ACD);
+    /***************************/
 
     sei();
 
+    uint8_t data[120];
     while (1)
     {
         rf_rx_start(data, sizeof(data), 4);
         rf_rx_wait();
+        if(memcmp(data, "ON", 2) == 0)
+        {
+            LED_ON;
+        }
+        else if(memcmp((char*) data, "OFF", 3) == 0)
+        {
+            LED_OFF;
+        }
     }
 }

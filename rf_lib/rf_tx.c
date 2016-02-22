@@ -72,7 +72,7 @@ void rf_tx_irq()
     }
 }
 
-void rf_tx_start(uint8_t* data, uint8_t len)
+void rf_tx_start(const void* data, uint8_t len)
 {
     len <<= 1;
     len = (len > sizeof(_tx_buffer)) ? sizeof(_tx_buffer) : len;
@@ -83,7 +83,7 @@ void rf_tx_start(uint8_t* data, uint8_t len)
     len = rf_man_dec (_tx_bytes);
     for(uint8_t i = 0; i < (len >> 1); i++)
     {
-        rf_man_enc(data[i], &_tx_buffer[i << 1]);
+        rf_man_enc(((uint8_t*)data)[i], &_tx_buffer[i << 1]);
     }
     _send = true;
 }

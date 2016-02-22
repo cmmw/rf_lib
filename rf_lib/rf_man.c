@@ -2,7 +2,7 @@
  * rf_man.c
  *
  * Created: 20.02.2016 12:05:41
- *  Author: Christian
+ *  Author: Christian Wagner
  */
 
 #include <stdint.h>

@@ -5,10 +5,6 @@
  * Author : Christian Wagner
  */
 
-#define LED_ON (PORTB |= (1 << PORTB4))
-#define LED_SWITCH (PORTB ^= (1 << PORTB4))
-#define LED_OFF (PORTB &= ~(1 << PORTB4))
-
 #define F_CPU 1000000UL
 
 #include <stdint.h>
@@ -37,7 +33,7 @@ static uint8_t _buf_size;
 
 //Everything after preamble is Manchester encoded except the EOT bits
 //3 byte PREAMBLE | 2 byte len (big endian) | len byte message | EOT bits '01'
-//PREAMBLE: 22 '1010...' bit followed by bits '01'  (0xAAAAA9)
+//PREAMBLE: 14 '1010...' bit followed by bits '01'  (0xAAAAA9)
 //16 bit len, Manchester encoded
 //n byte data, Manchester encoded
 //end bit '01'
@@ -160,14 +156,6 @@ void rf_rx_irq()
                         }
                         if(rx_buf_idx == rx_len)
                         {
-                            if(_buffer[0] == 'O' && _buffer[1] == 'N')
-                            {
-                                LED_ON;
-                            }
-                            else if(_buffer[0] == 'O' && _buffer[1] == 'F' && _buffer[2] == 'F')
-                            {
-                                LED_OFF;
-                            }
                             rx_state = RX_PRE;
                             _receive = false;
                             break;
@@ -189,14 +177,6 @@ void rf_rx_irq()
                     }
                     if(rx_buf_idx == rx_len)
                     {
-                        if(_buffer[0] == 'O' && _buffer[1] == 'N')
-                        {
-                            LED_ON;
-                        }
-                        else if(_buffer[0] == 'O' && _buffer[1] == 'F' && _buffer[2] == 'F')
-                        {
-                            LED_OFF;
-                        }
                         rx_state = RX_PRE;
                         _receive = false;
                     }
@@ -212,11 +192,11 @@ void rf_rx_irq()
 
 
 
-void rf_rx_start(uint8_t* buffer, uint8_t size, uint8_t samples)
+void rf_rx_start(void* buffer, uint8_t size, uint8_t samples)
 {
     _samples_min = samples - 1;		//TODO
     _samples_max = samples + 1;
-    _buffer = buffer;
+    _buffer = (uint8_t*) buffer;
     _buf_size = size;
     _receive = true;
     memset(buffer, 0, size);
