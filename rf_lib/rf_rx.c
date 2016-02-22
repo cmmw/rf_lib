@@ -25,6 +25,10 @@ enum RX_State
 };
 
 
+#define LED_ON (PORTB |= (1 << PORTB4))
+#define LED_SWITCH (PORTB ^= (1 << PORTB4))
+#define LED_OFF (PORTB &= ~(1 << PORTB4))
+
 static bool volatile _receive = false;
 static uint8_t _samples_min = 3;
 static uint8_t _samples_max = 5;
@@ -97,63 +101,58 @@ void rf_rx_irq()
                 break;
 
             case RX_DATA_LEN:
-                rx_buf_idx = rx_bits >> 3;
                 if(rx_double_bit)
                 {
-                    _buffer[rx_buf_idx] <<= 1;
-                    if(rx_last)
-                        _buffer[rx_buf_idx] |= 1;
-                    rx_bits++;
-                    rx_buf_idx = rx_bits >> 3;
-                }
-
-                if(rx_bits == 16)
-                {
-                    rx_state = RX_DATA;
-                    rx_buf_idx = 0;
-                    rx_len = rf_man_dec(_buffer);
-                    _buffer[0] = _buffer[1] = 0;
-                    rx_bits = 1;
-                    if(rx_sample)
-                        _buffer[0] |= 1;
-                    if(_buf_size < rx_len)
-                        rx_len = _buf_size;
-                }
-                else
-                {
-                    _buffer[rx_buf_idx] <<= 1;
-                    if(rx_sample)
-                        _buffer[rx_buf_idx] |= 1;
+                    if(rx_bits % 2 == 0)
+                    {
+                        rx_len <<= 1;
+                        if(!rx_last)
+                            rx_len |= 1;
+                    }
                     rx_bits++;
                     if(rx_bits == 16)
                     {
                         rx_state = RX_DATA;
-                        rx_bits = 0;
-                        rx_buf_idx = 0;
-                        rx_len = rf_man_dec(_buffer);
-                        _buffer[0] = _buffer[1] = 0;
+                        rx_buf_idx  = 0;
+                        if(!rx_sample)
+                            _buffer[0] |= 1;
+                        rx_bits = 1;
                         if(_buf_size < rx_len)
                             rx_len = _buf_size;
+                        break;
                     }
+                }
+                if(rx_bits % 2 == 0)
+                {
+                    rx_len <<= 1;
+                    if(!rx_sample)
+                        rx_len |= 1;
+                }
+                rx_bits++;
+                if(rx_bits == 16)
+                {
+                    rx_state = RX_DATA;
+                    rx_buf_idx = 0;
+                    rx_bits = 0;
+                    if(_buf_size < rx_len)
+                        rx_len = _buf_size;
                 }
                 break;
 
             case RX_DATA:
                 if(rx_double_bit)
                 {
+                    if(rx_bits % 2 == 0)
+                    {
+                        _buffer[rx_buf_idx] <<= 1;
+                        if(!rx_last)
+                            _buffer[rx_buf_idx] |= 1;
+                    }
                     rx_bits++;
-                    _buffer[rx_buf_idx] <<= 1;
-                    if(rx_last)
-                        _buffer[rx_buf_idx] |= 1;
-
-                    if(rx_bits == 8)
+                    if(rx_bits == 16)
                     {
                         rx_buf_idx++;
                         rx_bits = 0;
-                        if(rx_buf_idx % 2 == 0)
-                        {
-                            _buffer[(rx_buf_idx-2) >> 1] = rf_man_dec(&_buffer[rx_buf_idx - 2]);
-                        }
                         if(rx_buf_idx == rx_len)
                         {
                             rx_state = RX_PRE;
@@ -163,18 +162,17 @@ void rf_rx_irq()
                     }
                 }
 
+                if(rx_bits % 2 == 0)
+                {
+                    _buffer[rx_buf_idx] <<= 1;
+                    if(!rx_sample)
+                        _buffer[rx_buf_idx] |= 1;
+                }
                 rx_bits++;
-                _buffer[rx_buf_idx] <<= 1;
-                if(rx_sample)
-                    _buffer[rx_buf_idx] |= 1;
-                if(rx_bits == 8)
+                if(rx_bits == 16)
                 {
                     rx_buf_idx++;
                     rx_bits = 0;
-                    if(rx_buf_idx % 2 == 0)
-                    {
-                        _buffer[(rx_buf_idx-2) >> 1] = rf_man_dec(&_buffer[rx_buf_idx - 2]);
-                    }
                     if(rx_buf_idx == rx_len)
                     {
                         rx_state = RX_PRE;

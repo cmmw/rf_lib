@@ -72,8 +72,6 @@ void rf_tx_irq()
                 else
                     RF_OFF;
             }
-
-
             if(bit == 8)
             {
                 bit = 0;
@@ -97,7 +95,7 @@ void rf_tx_irq()
 
 void rf_tx_start(const void* data, uint8_t len)
 {
-    _tx_bytes = len << 1;
+    _tx_bytes = len;
     _tx_packet[2].ptr = data;
     _tx_packet[2].size = len;
     _send = true;
