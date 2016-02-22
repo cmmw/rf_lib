@@ -77,7 +77,6 @@ void rf_tx_start(const void* data, uint8_t len)
     rf_man_enc(len, _tx_bytes);
     _tx_packet[2].size = len;
     memset(_tx_buffer, 0, sizeof(_tx_buffer));
-    len = rf_man_dec (_tx_bytes);
     for(uint8_t i = 0; i < (len >> 1); i++)
     {
         rf_man_enc(((uint8_t*)data)[i], &_tx_buffer[i << 1]);
