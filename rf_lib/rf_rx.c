@@ -38,11 +38,13 @@ static uint8_t _buf_size;
 static uint8_t _id;
 
 //Everything after preamble is Manchester encoded except the EOT bits
-//3 byte PREAMBLE | 2 byte len (big endian) | len byte message | EOT bits '01'
+//3 byte PREAMBLE | 2 byte len (length is the size of the decoded message) | 2 byte id | 2*len byte message | EOT bits 0x40
 //PREAMBLE: 14 '1010...' bit followed by bits '01'  (0xAAAAA9)
 //16 bit len, Manchester encoded
-//n byte data, Manchester encoded
-//end bit '01'
+//16 bit id, Manchester encoded
+//2*len bytes data, Manchester encoded
+//end of transmission bits 0x40
+//if id is 0xFF it will be ignored and all traffic is returned
 void rf_rx_irq()
 {
     static uint8_t rx_count;
@@ -118,7 +120,7 @@ void rf_rx_irq()
                         rx_bits = 0;
                         if(rx_state == RX_DATA_ID)
                         {
-                            if(rx_len != _id)
+                            if(rx_len != _id && _id != 0xFF)
                             {
                                 rx_state = RX_PRE;
                                 break;
@@ -154,7 +156,7 @@ void rf_rx_irq()
                     rx_bits = 0;
                     if(rx_state == RX_DATA_ID)
                     {
-                        if(rx_len != _id)
+                        if(rx_len != _id && _id != 0xFF)
                         {
                             rx_state = RX_PRE;
                             break;
@@ -225,8 +227,9 @@ void rf_rx_irq()
 
 void rf_rx_start(void* buffer, uint8_t size, uint8_t samples, uint8_t id)
 {
-    _samples_min = samples - 1;		//TODO
-    _samples_max = samples + 1;
+    uint8_t d = samples / 4;
+    _samples_min = samples - d;
+    _samples_max = samples + d;
     _buffer = (uint8_t*) buffer;
     _buf_size = size;
     _id = id;

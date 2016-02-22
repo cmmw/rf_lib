@@ -50,16 +50,16 @@ int main(void)
     {
         if(!(PINB & (1 << PINB2)))
         {
-            rf_tx_start(ON, sizeof(ON), 10);
-//             send_pulse();
+            rf_tx_start(ON, sizeof(ON), 0x09);
+//             rf_tx_pulse();
             TIMSK |= (1 << OCIE0A);			//Enable Compare Match A interrupt
             rf_tx_wait();
             TIMSK &= ~(1 << OCIE0A);		//Disable Compare Match A interrupt
         }
         else if(!(PINB & (1 << PINB4)))
         {
-            rf_tx_start(OFF, sizeof(OFF), 10);
-//             send_pulse();
+            rf_tx_start(OFF, sizeof(OFF), 0x09);
+//             rf_tx_pulse();
             TIMSK |= (1 << OCIE0A);			//Enable Compare Match A interrupt
             rf_tx_wait();
             TIMSK &= ~(1 << OCIE0A);		//Disable Compare Match A interrupt

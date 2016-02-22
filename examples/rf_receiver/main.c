@@ -48,13 +48,13 @@ int main(void)
     uint8_t data[120];
     while (1)
     {
-        rf_rx_start(data, sizeof(data), 4, 10);
+        rf_rx_start(data, sizeof(data), 4, 0x09);
         rf_rx_wait();
         if(memcmp(data, "ON", 2) == 0)
         {
             LED_ON;
         }
-        else if(memcmp((char*) data, "OFF", 3) == 0)
+        else if(memcmp(data, "OFF", 3) == 0)
         {
             LED_OFF;
         }

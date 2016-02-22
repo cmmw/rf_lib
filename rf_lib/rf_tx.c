@@ -117,23 +117,44 @@ void rf_tx_wait()
 void rf_tx_pulse()
 {
     RF_OFF;
-    uint32_t do_send;
+    uint8_t high;
     for(uint8_t k = 0; k < sizeof(_tx_packet)/sizeof(_tx_packet[0]); k++)
     {
         for(uint16_t j = 0; j < _tx_packet[k].size; j++)
         {
-            for(int8_t i = 7; i >= 0; i--)
+            uint8_t i = 0;
+            bool encode = _tx_packet[k].encode;
+            while(i < 8)
             {
-                do_send = _tx_packet[k].ptr[j] & (1 << i);
-                if(do_send)
+                high = _tx_packet[k].ptr[j] & (0x80 >> i);
+                if(encode)
                 {
-                    RF_ON;
+                    if(high)
+                    {
+                        RF_OFF;
+                        _delay_us(890);
+                        RF_ON;
+                    }
+                    else
+                    {
+                        RF_ON;
+                        _delay_us(880);
+                        RF_OFF;
+                    }
                 }
                 else
                 {
-                    RF_OFF;
+                    if(high)
+                    {
+                        RF_ON;
+                    }
+                    else
+                    {
+                        RF_OFF;
+                    }
                 }
-                _delay_us(935);
+                _delay_us(900);
+                i++;
             }
         }
     }
