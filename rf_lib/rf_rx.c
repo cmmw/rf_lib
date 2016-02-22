@@ -34,7 +34,7 @@ static uint8_t _id;
 
 //Everything after preamble is Manchester encoded except the EOT bits
 //3 byte PREAMBLE | 2 byte len (length is the size of the decoded message) | 2 byte id | 2*len byte message | EOT bits 0x40
-//PREAMBLE: 14 '1010...' bit followed by bits '01'  (0xAAAAA9)
+//PREAMBLE: 14 '1010...' bits followed by bits '01'  (0xAAAAA9)
 //16 bit len, Manchester encoded
 //16 bit id, Manchester encoded
 //2*len bytes data, Manchester encoded
