@@ -15,6 +15,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <stddef.h>
+#include <string.h>
 
 #include "rf_tx.h"
 #include "rf_man.h"
@@ -23,13 +24,13 @@ static bool volatile _send = false;
 const static uint8_t PREAMBLE[] = {0xAA, 0xAA, 0xA9};
 const static uint8_t EOT[] = {0x40};
 static uint8_t _tx_bytes[2];
-static uint16_t _tx_buffer[100];
+static uint8_t _tx_buffer[100];
 
 static struct _tx_packet_t
 {
     const uint8_t* ptr;
     uint8_t size;
-} _tx_packet[4] = { {PREAMBLE, sizeof(PREAMBLE)}, {(const uint8_t*) &_tx_bytes, sizeof(_tx_bytes)}, {NULL, 0}, {EOT, sizeof(EOT)} };
+} _tx_packet[4] = { {PREAMBLE, sizeof(PREAMBLE)}, {(const uint8_t*) &_tx_bytes, sizeof(_tx_bytes)}, {(const uint8_t*) &_tx_buffer, 0}, {EOT, sizeof(EOT)} };
 
 void rf_tx_irq()
 {
@@ -73,10 +74,17 @@ void rf_tx_irq()
 
 void rf_tx_start(uint8_t* data, uint8_t len)
 {
-    len = (len*2 > sizeof(_tx_buffer)) ? sizeof(_tx_buffer) : len*2;
+    len <<= 1;
+    len = (len > sizeof(_tx_buffer)) ? sizeof(_tx_buffer) : len;
+    memset(_tx_bytes, 0, sizeof(_tx_bytes));
     rf_man_enc(len, _tx_bytes);
-    _tx_packet[2].ptr = data;		//TODO: codieren
     _tx_packet[2].size = len;
+    memset(_tx_buffer, 0, sizeof(_tx_buffer));
+    len = rf_man_dec (_tx_bytes);
+    for(uint8_t i = 0; i < (len >> 1); i++)
+    {
+        rf_man_enc(data[i], &_tx_buffer[i << 1]);
+    }
     _send = true;
 }
 

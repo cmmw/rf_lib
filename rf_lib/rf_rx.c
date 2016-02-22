@@ -108,20 +108,20 @@ void rf_rx_irq()
                     if(rx_last)
                         _buffer[rx_buf_idx] |= 1;
                     rx_bits++;
+                    rx_buf_idx = rx_bits >> 3;
                 }
 
                 if(rx_bits == 16)
                 {
                     rx_state = RX_DATA;
-                    rx_bits = 1;
                     rx_buf_idx = 0;
                     rx_len = rf_man_dec(_buffer);
-                    _buffer[2] <<= 1;
+                    _buffer[0] = _buffer[1] = 0;
+                    rx_bits = 1;
                     if(rx_sample)
-                        _buffer[2] |= 1;
-
-//                     if(_rx_buf_size < rx_len)
-//                         rx_len = _rx_buf_size;
+                        _buffer[0] |= 1;
+                    if(_buf_size < rx_len)
+                        rx_len = _buf_size;
                 }
                 else
                 {
@@ -135,19 +135,14 @@ void rf_rx_irq()
                         rx_bits = 0;
                         rx_buf_idx = 0;
                         rx_len = rf_man_dec(_buffer);
-//                         if(_rx_buf_size < rx_len)
-//                             rx_len = _rx_buf_size;
+                        _buffer[0] = _buffer[1] = 0;
+                        if(_buf_size < rx_len)
+                            rx_len = _buf_size;
                     }
                 }
                 break;
 
             case RX_DATA:
-
-                if(rx_len == 5)
-                    LED_OFF;
-                if(rx_len == 10)
-                    LED_ON;
-
                 if(rx_double_bit)
                 {
                     rx_bits++;
@@ -159,8 +154,20 @@ void rf_rx_irq()
                     {
                         rx_buf_idx++;
                         rx_bits = 0;
+                        if(rx_buf_idx % 2 == 0)
+                        {
+                            _buffer[(rx_buf_idx-2) >> 1] = rf_man_dec(&_buffer[rx_buf_idx - 2]);
+                        }
                         if(rx_buf_idx == rx_len)
                         {
+                            if(_buffer[0] == 'O' && _buffer[1] == 'N')
+                            {
+                                LED_ON;
+                            }
+                            else if(_buffer[0] == 'O' && _buffer[1] == 'F' && _buffer[2] == 'F')
+                            {
+                                LED_OFF;
+                            }
                             rx_state = RX_PRE;
                             _receive = false;
                             break;
@@ -176,8 +183,20 @@ void rf_rx_irq()
                 {
                     rx_buf_idx++;
                     rx_bits = 0;
+                    if(rx_buf_idx % 2 == 0)
+                    {
+                        _buffer[(rx_buf_idx-2) >> 1] = rf_man_dec(&_buffer[rx_buf_idx - 2]);
+                    }
                     if(rx_buf_idx == rx_len)
                     {
+                        if(_buffer[0] == 'O' && _buffer[1] == 'N')
+                        {
+                            LED_ON;
+                        }
+                        else if(_buffer[0] == 'O' && _buffer[1] == 'F' && _buffer[2] == 'F')
+                        {
+                            LED_OFF;
+                        }
                         rx_state = RX_PRE;
                         _receive = false;
                     }

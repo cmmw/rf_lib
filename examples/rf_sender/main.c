@@ -29,12 +29,11 @@ int main(void)
     //     TIMSK |= (1 << OCIE0A);		//Enable Compare Match A interrupt
     //1000 Hz = (F_CPU / 1000 / prescale=8) - 1 -> 124
     OCR0A = 124;
-
     sei();
     while (1)
     {
-        static uint8_t ON[] = {'O', 'N','X','X','X'};
-        static uint8_t OFF[] = {'O', 'F', 'F','X', 'X', 'X', 'X', 'X', 'X', 'X'};
+        static uint8_t ON[] = {'O', 'N'};
+        static uint8_t OFF[] = {'O', 'F', 'F'};
         if(!(PINB & (1 << PINB2)))
         {
             rf_tx_start(ON, sizeof(ON));
