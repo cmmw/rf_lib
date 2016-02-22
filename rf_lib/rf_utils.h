@@ -25,7 +25,7 @@ extern "C" {
 uint16_t conv16(uint16_t var);
 uint32_t conv32(uint32_t var);
 
-//Find out what endian the controller uses
+//Find out which byte order the controller uses
 bool is_little_endian();
 
 

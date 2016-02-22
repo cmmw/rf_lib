@@ -117,6 +117,7 @@ void rf_tx_wait()
     while(_send);
 }
 
+//Not finished, interrupt method is recommended
 void rf_tx_pulse()
 {
     RF_OFF;
