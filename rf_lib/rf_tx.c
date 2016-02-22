@@ -41,26 +41,23 @@ void rf_tx_irq()
     {
         if(packet_idx < sizeof(_tx_packet) / sizeof(_tx_packet[0]))
         {
-            if(ptr_idx < _tx_packet[packet_idx].size)
+            if(_tx_packet[packet_idx].ptr[ptr_idx] & (1 << --bits))
             {
-                if(_tx_packet[packet_idx].ptr[ptr_idx] & (1 << --bits))
-                {
-                    RF_ON;
-                }
-                else
-                {
-                    RF_OFF;
-                }
-                if(bits == 0)
-                {
-                    bits = 8;
-                    ptr_idx++;
-                }
+                RF_ON;
             }
-            if(ptr_idx == _tx_packet[packet_idx].size)
+            else
             {
-                ptr_idx = 0;
-                packet_idx++;
+                RF_OFF;
+            }
+            if(bits == 0)
+            {
+                bits = 8;
+                ptr_idx++;
+                if(ptr_idx == _tx_packet[packet_idx].size)
+                {
+                    ptr_idx = 0;
+                    packet_idx++;
+                }
             }
         }
         else
