@@ -31,6 +31,7 @@ static uint8_t _id;
 static volatile uint8_t* _REG;
 static uint8_t _PIN;
 
+
 //Everything after preamble is Manchester encoded except the EOT bits.
 //Manchester code as per IEEE 802.3 is used.
 //3 byte PREAMBLE | 2 byte len (len is the size of the decoded message) | 2 byte id | 2*len byte message | EOT bits 0x40
