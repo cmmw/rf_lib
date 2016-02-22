@@ -23,35 +23,60 @@
 static bool volatile _send = false;
 const static uint8_t PREAMBLE[] = {0xAA, 0xAA, 0xA9};
 const static uint8_t EOT[] = {0x40};
-static uint8_t _tx_bytes[2];
-static uint8_t _tx_buffer[100];
+static uint8_t _tx_bytes;
 
 static struct _tx_packet_t
 {
     const uint8_t* ptr;
     uint8_t size;
-} _tx_packet[4] = { {PREAMBLE, sizeof(PREAMBLE)}, {(const uint8_t*) &_tx_bytes, sizeof(_tx_bytes)}, {(const uint8_t*) &_tx_buffer, 0}, {EOT, sizeof(EOT)} };
+    bool encode;
+} _tx_packet[4] = { {PREAMBLE, sizeof(PREAMBLE), false}, {(const uint8_t*) &_tx_bytes, sizeof(_tx_bytes), true}, {NULL, 0, true}, {EOT, sizeof(EOT), false} };
 
 void rf_tx_irq()
 {
-    static uint8_t bits = 8;
+    static uint8_t bit = 0;
     static uint8_t ptr_idx = 0;
     static uint8_t packet_idx = 0;
+    static uint8_t enc_flag = 0;
+    static uint8_t signal;
     if(_send)
     {
         if(packet_idx < sizeof(_tx_packet) / sizeof(_tx_packet[0]))
         {
-            if(_tx_packet[packet_idx].ptr[ptr_idx] & (1 << --bits))
+            signal = _tx_packet[packet_idx].ptr[ptr_idx] & (0x80 >> bit);
+            if(_tx_packet[packet_idx].encode)
             {
-                RF_ON;
+                if(enc_flag == 0)
+                {
+                    enc_flag = 1;
+                    if(signal)
+                        RF_OFF;
+                    else
+                        RF_ON;
+                }
+                else
+                {
+                    bit++;
+                    enc_flag = 0;
+                    if(signal)
+                        RF_ON;
+                    else
+                        RF_OFF;
+                }
             }
             else
             {
-                RF_OFF;
+                bit++;
+                if(signal)
+                    RF_ON;
+                else
+                    RF_OFF;
             }
-            if(bits == 0)
+
+
+            if(bit == 8)
             {
-                bits = 8;
+                bit = 0;
                 ptr_idx++;
                 if(ptr_idx == _tx_packet[packet_idx].size)
                 {
@@ -69,18 +94,12 @@ void rf_tx_irq()
     }
 }
 
+
 void rf_tx_start(const void* data, uint8_t len)
 {
-    len <<= 1;
-    len = (len > sizeof(_tx_buffer)) ? sizeof(_tx_buffer) : len;
-    memset(_tx_bytes, 0, sizeof(_tx_bytes));
-    rf_man_enc(len, _tx_bytes);
+    _tx_bytes = len << 1;
+    _tx_packet[2].ptr = data;
     _tx_packet[2].size = len;
-    memset(_tx_buffer, 0, sizeof(_tx_buffer));
-    for(uint8_t i = 0; i < (len >> 1); i++)
-    {
-        rf_man_enc(((uint8_t*)data)[i], &_tx_buffer[i << 1]);
-    }
     _send = true;
 }
 
