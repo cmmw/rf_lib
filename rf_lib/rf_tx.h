@@ -20,6 +20,7 @@ void rf_tx_start(const void* data, uint8_t len, uint8_t id);
 void rf_tx_restart();
 bool rf_tx_done();
 void rf_tx_wait();
+void rf_tx_set_io(volatile uint8_t* reg, uint8_t pin);
 void rf_tx_pulse();
 
 #ifdef __cplusplus

@@ -46,6 +46,7 @@ int main(void)
 
     static uint8_t ON[] = {'O', 'N'};
     static uint8_t OFF[] = {'O', 'F', 'F'};
+    rf_tx_set_io(&PORTB, PB3);
     while (1)
     {
         if(!(PINB & (1 << PINB2)))

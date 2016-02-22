@@ -46,6 +46,7 @@ int main(void)
     sei();
 
     uint8_t data[120];
+	rf_rx_set_io(&PINB, PINB3);
     rf_rx_start(data, sizeof(data), 4, 0x09);
     while (1)
     {

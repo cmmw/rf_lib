@@ -5,12 +5,12 @@
  * Author : Christian Wagner
  */
 
+#define RF_ON ((*_REG) |= (1 << _PIN))
+#define RF_OFF ((*_REG) &= ~(1 << _PIN))
+
 #ifndef F_CPU
 #define F_CPU 1000000UL
 #endif
-
-#define RF_ON (PORTB |= (1 << PORTB3))
-#define RF_OFF (PORTB &= ~(1 << PORTB3))
 
 #include <avr/io.h>
 #include <util/delay.h>
@@ -25,6 +25,8 @@ const static uint8_t PREAMBLE[] = {0xAA, 0xAA, 0xA9};
 const static uint8_t EOT[] = {0x40};
 static uint8_t _tx_bytes;
 static uint8_t _tx_id;
+static volatile uint8_t* _REG;
+static uint8_t _PIN;
 
 static struct _tx_packet_t
 {
@@ -115,6 +117,12 @@ bool rf_tx_done()
 void rf_tx_wait()
 {
     while(_send);
+}
+
+void rf_tx_set_io(volatile uint8_t* reg, uint8_t pin)
+{
+    _REG = reg;
+    _PIN = pin;
 }
 
 //Not finished, interrupt method is recommended

@@ -5,11 +5,8 @@
  * Author : Christian Wagner
  */
 
-#define F_CPU 1000000UL
-
 #include <stdint.h>
 #include <avr/io.h>
-#include <util/delay.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -25,12 +22,14 @@ enum RX_State
     RX_DATA,
 };
 
-static bool volatile _receive = false;
+static volatile bool _receive = false;
 static uint8_t _samples_min = 3;
 static uint8_t _samples_max = 5;
 static uint8_t* _buffer;
 static uint8_t _buf_size;
 static uint8_t _id;
+static volatile uint8_t* _REG;
+static uint8_t _PIN;
 
 //Everything after preamble is Manchester encoded except the EOT bits.
 //Manchester code as per IEEE 802.3 is used.
@@ -54,7 +53,7 @@ void rf_rx_irq()
     if(!_receive)
         return;
 
-    uint8_t rx_sample = PINB & (1 << PINB3);
+    uint8_t rx_sample = (*_REG) & (1 << _PIN);
 
     rx_count++;
     if(rx_sample == rx_last)
@@ -244,4 +243,10 @@ bool rf_rx_done()
 void rf_rx_wait()
 {
     while(_receive);
+}
+
+void rf_rx_set_io(volatile uint8_t* reg, uint8_t pin)
+{
+    _REG = reg;
+    _PIN = pin;
 }

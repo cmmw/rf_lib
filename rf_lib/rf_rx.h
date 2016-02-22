@@ -20,6 +20,7 @@ void rf_rx_start(void* buffer, uint8_t size, uint8_t samples, uint8_t id);
 void rf_rx_restart();
 bool rf_rx_done();
 void rf_rx_wait();
+void rf_rx_set_io(volatile uint8_t* reg, uint8_t pin);
 
 #ifdef __cplusplus
 }
