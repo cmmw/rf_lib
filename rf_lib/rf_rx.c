@@ -28,6 +28,7 @@ static uint8_t _samples_max = 5;
 static uint8_t* _buffer;
 static uint8_t _buf_size;
 static uint8_t _id;
+static uint8_t _len;
 static volatile uint8_t* _REG;
 static uint8_t _PIN;
 
@@ -49,7 +50,6 @@ void rf_rx_irq()
     static enum RX_State rx_state = RX_PRE;
     static uint8_t rx_bits;
     static uint8_t rx_buf_idx;
-    static uint8_t rx_len;
 
     if(!_receive)
         return;
@@ -95,7 +95,7 @@ void rf_rx_irq()
                     else if(rx_sync_count >= 10)		//rx_last == 0, received '...001'
                     {
                         rx_state = RX_DATA_ID;
-                        _buffer[0] = _buffer[1] = rx_bits = rx_len = 0;
+                        _buffer[0] = _buffer[1] = rx_bits = _len = 0;
                     }
                 }
                 break;
@@ -106,9 +106,9 @@ void rf_rx_irq()
                 {
                     if(rx_bits % 2 == 0)
                     {
-                        rx_len <<= 1;
+                        _len <<= 1;
                         if(!rx_last)
-                            rx_len |= 1;
+                            _len |= 1;
                     }
                     rx_bits++;
                     if(rx_bits == 16)
@@ -116,25 +116,25 @@ void rf_rx_irq()
                         rx_bits = 0;
                         if(rx_state == RX_DATA_ID)
                         {
-                            if(rx_len != _id && _id != 0xFF)
+                            if(_len != _id && _id != 0xFF)
                             {
                                 rx_state = RX_PRE;
                                 break;
                             }
                             rx_state = RX_DATA_LEN;
-                            rx_len = 0;
+                            _len = 0;
                         }
                         else
                         {
                             rx_buf_idx = 0;
                             rx_state = RX_DATA;
-                            if(_buf_size < rx_len)
-                                rx_len = _buf_size;
+                            if(_buf_size < _len)
+                                _len = _buf_size;
                             if(!rx_sample)
                                 _buffer[0] |= 1;
                             rx_bits = 1;
-                            if(_buf_size < rx_len)
-                                rx_len = _buf_size;
+                            if(_buf_size < _len)
+                                _len = _buf_size;
                             break;
                         }
 
@@ -142,9 +142,9 @@ void rf_rx_irq()
                 }
                 if(rx_bits % 2 == 0)
                 {
-                    rx_len <<= 1;
+                    _len <<= 1;
                     if(!rx_sample)
-                        rx_len |= 1;
+                        _len |= 1;
                 }
                 rx_bits++;
                 if(rx_bits == 16)
@@ -152,20 +152,20 @@ void rf_rx_irq()
                     rx_bits = 0;
                     if(rx_state == RX_DATA_ID)
                     {
-                        if(rx_len != _id && _id != 0xFF)
+                        if(_len != _id && _id != 0xFF)
                         {
                             rx_state = RX_PRE;
                             break;
                         }
                         rx_state = RX_DATA_LEN;
-                        rx_len = 0;
+                        _len = 0;
                     }
                     else
                     {
                         rx_buf_idx = 0;
                         rx_state = RX_DATA;
-                        if(_buf_size < rx_len)
-                            rx_len = _buf_size;
+                        if(_buf_size < _len)
+                            _len = _buf_size;
                     }
                 }
                 break;
@@ -184,7 +184,7 @@ void rf_rx_irq()
                     {
                         rx_buf_idx++;
                         rx_bits = 0;
-                        if(rx_buf_idx == rx_len)
+                        if(rx_buf_idx == _len)
                         {
                             rx_state = RX_PRE;
                             _receive = false;
@@ -204,7 +204,7 @@ void rf_rx_irq()
                 {
                     rx_buf_idx++;
                     rx_bits = 0;
-                    if(rx_buf_idx == rx_len)
+                    if(rx_buf_idx == _len)
                     {
                         rx_state = RX_PRE;
                         _receive = false;
@@ -236,14 +236,17 @@ void rf_rx_restart()
     _receive = true;
 }
 
-bool rf_rx_done()
+uint8_t rf_rx_done()
 {
-    return !_receive;
+    if(_receive)
+        return 0;
+    return _len;
 }
 
-void rf_rx_wait()
+uint8_t rf_rx_wait()
 {
     while(_receive);
+    return _len;
 }
 
 void rf_rx_set_io(volatile uint8_t* reg, uint8_t pin)
