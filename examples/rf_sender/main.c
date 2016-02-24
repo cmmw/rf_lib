@@ -18,9 +18,7 @@ ISR(TIMER0_COMPA_vect)
     rf_tx_irq();
 }
 
-ISR(PCINT0_vect)
-{
-}
+EMPTY_INTERRUPT(PCINT0_vect);
 
 int main(void)
 {
