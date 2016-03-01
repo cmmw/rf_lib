@@ -35,7 +35,7 @@ uint8_t rf_man_dec(const uint8_t data[2])
     {
         uint8_t idx = (i >> 2);
         byte <<= 1;
-        if(!((data[idx] << (2 * (i - (i & 0x4)))) & 0x80))
+        if(!((data[idx] << (2 * (i & 0x03))) & 0x80))
             byte |= 1;
     }
     return byte;
