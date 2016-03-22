@@ -27,7 +27,7 @@ ISR(TIMER0_COMPA_vect)
 
 int main(void)
 {
-    DDRB &= !(1 << DDB3);	//RF Receiver
+    DDRB &= ~(1 << DDB3);	//RF Receiver
     PORTB |= (1 << PB3);	//Pull-up
     DDRB |= (1 << DDB4)	;	//LED
 
